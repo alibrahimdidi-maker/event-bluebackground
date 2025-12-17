@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="dv" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Royal Event System (Custom BG)</title>
+    <style id="ctrl-font-style">
+        @font-face { font-family: 'Faruuma'; src: local('Faruuma'), url('Fonts/faruuma.ttf') format('truetype'); }
+        body, input, textarea, select, button { font-family: 'Faruuma', sans-serif; }
+    </style>
+    
+    <style>
+        /* --- CONTROL PANEL STYLES --- */
+        body { 
+            background: #eceff1; padding: 10px; margin: 0; 
+            height: 100vh; box-sizing: border-box; overflow: hidden; 
+        }
+        
+        .main-layout { display: flex; gap: 15px; height: 96vh; max-width: 100%; margin: 0 auto; }
+
+        .sidebar {
+            flex: 0 0 310px; background: white; padding: 15px; border-radius: 8px;
+            display: flex; flex-direction: column;
+            border-top: 5px solid #004d40; box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+
+        .editor {
+            flex: 1; background: white; padding: 25px; border-radius: 8px;
+            border-top: 5px solid #b8860b; box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: flex; flex-direction: column; overflow-y: auto;
+        }
+
+        h2 { margin-top: 0; color: #004d40; text-align: center; font-size: 18px; border-bottom: 2px solid #eee; padding-bottom: 10px;}
+
+        .launch-btn { 
+            background: #b8860b; color: white; padding: 12px; width: 100%; 
+            border: none; border-radius: 5px; cursor: pointer; font-weight: bold; 
+            font-size: 16px; margin-bottom: 10px;
+            border-bottom: 3px solid #8b6508;
+        }
+        .launch-btn:active { transform: translateY(2px); border-bottom: 1px solid #8b6508; }
+
+        .file-box { background: #fdfbe6; padding: 10px; border-radius: 5px; border: 1px solid #f0e68c; margin-bottom: 8px; }
+        label { display: block; font-weight: bold; font-size: 13px; margin-bottom: 3px; color: #333; }
+        input[type="file"] { width: 100%; font-size: 11px; margin-bottom: 5px; }
+
+        /* INPUTS */
+        input[type="text"], textarea { 
+            width: 98%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; 
+            font-size: 20px; margin-bottom: 10px;
+            text-align: center; background: #fafafa; direction: rtl;
+        }
+        input[type="text"]:focus, textarea:focus { border-color: #b8860b; outline: none; background: #fff; }
+        
+        .sub-input {
+            font-size: 16px !important; padding: 8px !important;
+            margin-bottom: 5px !important; border-color: #eee !important;
+        }
+        
+        textarea { resize: vertical; min-height: 120px; line-height: 1.6; font-size: 24px !important; }
+        select { width: 100%; font-size: 14px; outline: none; border-color: #004d40; margin-bottom: 10px; }
+
+        .controls { display: flex; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee; }
+        button.action { flex: 1; padding: 15px; font-size: 18px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; transition: 0.2s; }
+        .btn-live { background: #004d40; flex: 2; border: 2px solid #ffd700; color: #ffd700; font-size: 22px; }
+        .btn-nav { background: #546e7a; }
+        .btn-clear { background: #c62828; flex: 0.5; color: white; }
+
+        #statusMsg { text-align: center; margin-top: 8px; font-weight: bold; color: green; font-size: 16px; }
+        .font-indicator { font-size: 12px; color: green; text-align: right; margin-top:-5px; margin-bottom: 8px; display:none; font-weight:bold; }
+        #logoPreview, #bgPreview { max-height: 50px; display: block; margin: 5px auto; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+
+<div class="main-layout">
+    <div class="sidebar">
+        <button class="launch-btn" onclick="openTV()">🖥️ 1. ޓީވީ ސްކްރީން ހުޅުވާ</button>
+        <div id="connStatus" style="margin-top:0px; font-size:12px; color:red; font-weight:bold; text-align:center; margin-bottom:10px;">Not Connected</div>
+
+        <div class="file-box">
+            <label>1. ކޮންޓެންޓް ލިސްޓް (CSV/Txt):</label>
+            <input type="file" id="csvFile" accept=".csv, .txt">
+        </div>
+
+        <div class="file-box" style="background:#e0f2f1; border-color:#00695c;">
+            <label>2. ޔުނިވަރސިޓީ ލޯގޯ/ބެނަރ:</label>
+            <input type="file" id="logoInput" accept="image/*">
+            <img id="logoPreview" src="" style="display:none;">
+        </div>
+
+        <div class="file-box" style="border: 1px solid #2196f3; background: #e3f2fd;">
+            <label style="color:#0d47a1">3. ފޮންޓް ސެޓިންގްސް:</label>
+            
+            <label style="font-size:11px">A. މައި ފޮންޓް (ދިވެހި/އަރަބި):</label>
+            <input type="file" id="font1" accept=".ttf, .otf">
+            <div id="f1Stat" class="font-indicator">✅ Loaded & Applied</div>
+
+            <label style="font-size:11px">B. އިނގިރޭސި ފޮންޓް:</label>
+            <input type="file" id="font2" accept=".ttf, .otf">
+            <div id="f2Stat" class="font-indicator">✅ Loaded</div>
+
+            <label style="font-size:11px">C. އިތުރު ފޮންޓް:</label>
+            <input type="file" id="font3" accept=".ttf, .otf">
+            <div id="f3Stat" class="font-indicator">✅ Loaded</div>
+        </div>
+
+        <div class="file-box" style="background:#f3e5f5; border-color:#8e24aa;">
+            <label style="color:#4a148c">4. ބެކްގްރައުންޑް ފޮޓޯ:</label>
+            <input type="file" id="bgInput" accept="image/*">
+            <div id="bgStat" class="font-indicator" style="color:#8e24aa;">✅ Set</div>
+        </div>
+
+        <label>ލިސްޓުން ހޯދާ:</label>
+        <input type="text" id="search" placeholder="Search..." onkeyup="filterList()" style="font-size:14px; padding:5px; margin-bottom:5px;">
+        <select id="stuList" size="8" onchange="loadStudent()"></select>
+    </div>
+
+    <div class="editor">
+        <h2>🎓 ކޮންޓްރޯލް ޕެނަލް</h2>
+        
+        <label style="text-align:center">މައި ސުރުޚީ / Main Heading:</label>
+        <input id="titleInput" class="dhi" placeholder="މައި ސުރުޚީ ލިޔުއްވާ...">
+
+        <label style="text-align:center; font-size:12px; color:#555;">ސަބް ހެޑިންގ ތައް (ބޭނުން ނަމަ):</label>
+        <input id="sub1" class="dhi sub-input" placeholder="ސަބް ހެޑިންގ 1">
+        <input id="sub2" class="dhi sub-input" placeholder="ސަބް ހެޑިންގ 2">
+        <input id="sub3" class="dhi sub-input" placeholder="ސަބް ހެޑިންގ 3">
+
+        <label style="text-align:center">މައިގަނޑު ލިޔުން / Content:</label>
+        <textarea id="mainContent" class="dhi" placeholder="ލިޔުންކޮޅު މިތަނަށް..."></textarea>
+        
+        <div class="controls">
+            <button class="action btn-nav" onclick="move(-1)">◀ Prev</button>
+            <button class="action btn-live" onclick="updateTV()">📺 ޓީވީއަށް އަރުވާ</button>
+            <button class="action btn-nav" onclick="move(1)">Next ▶</button>
+            <button class="action btn-clear" onclick="clearTV()" title="Clear Text">X</button>
+        </div>
+        <div id="statusMsg">Ready</div>
+    </div>
+</div>
+
+<script>
+    let tvWindow = null;
+    let contentList = [];
+    let uploadedLogo = null;
+    let uploadedBg = null; // Store background image
+    let fonts = { f1: null, f2: null, f3: null };
+
+    // --- TV SCREEN GENERATION ---
+    function openTV() {
+        tvWindow = window.open('', 'RoyalLogoTV', 'width=1280,height=720,menubar=no,toolbar=no');
+        if(!tvWindow) { alert("⚠️ Please Allow Popups!"); return; }
+
+        const designHTML = `
+        <!DOCTYPE html>
+        <html lang="dv" dir="rtl">
+        <head>
+            <meta charset="UTF-8">
+            <style id="dynamic-font-styles">
+                @font-face { font-family: 'Faruuma'; src: local('Faruuma'); }
+                body { font-family: 'Faruuma', sans-serif; }
+            </style>
+            <style>
+                body { 
+                    margin: 0; padding: 0; overflow: hidden; height: 100vh; width: 100vw;
+                    background-color: #002a20; 
+                    /* Default Gradient */
+                    background-image: radial-gradient(circle at center, #003d2e 0%, #001812 100%);
+                    background-size: cover;
+                    background-position: center;
+                    display: flex; justify-content: center; align-items: center;
+                }
+
+                /* LOGO AREA */
+                .logo-container {
+                    position: absolute; top: 20px; left: 0; right: 0;
+                    text-align: center; z-index: 10; padding: 0 20px;
+                }
+                #displayLogo {
+                    max-height: 80px; max-width: 40%;
+                    object-fit: contain;
+                    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+                    display: none; 
+                }
+
+                /* --- BOTTOM CORNER DESIGN --- */
+                .corner { position: absolute; width: 250px; height: 250px; pointer-events: none; z-index: 20; }
+                .bottom-left { bottom: 30px; left: 30px; transform: rotate(180deg); }
+
+                .line-outer {
+                    position: absolute; top: 0; right: 0;
+                    width: 60px; height: 60px; 
+                    border-top: 10px solid #b8860b; 
+                    border-right: 10px solid #b8860b;
+                    box-shadow: 2px -2px 5px rgba(0,0,0,0.5);
+                }
+                .line-inner {
+                    position: absolute; top: 20px; right: 20px;
+                    width: 140px; height: 140px; 
+                    border-top: 3px solid #ffd700; 
+                    border-right: 3px solid #ffd700;
+                    box-shadow: 1px -1px 3px rgba(0,0,0,0.5);
+                }
+
+                /* --- CONTENT BOX --- */
+                .content-wrapper {
+                    width: 75%; 
+                    max-width: 1300px;
+                    max-height: 65vh; 
+                    margin-top: 40px; 
+                    margin-bottom: 50px; 
+                    
+                    padding: 40px; text-align: center;
+                    display: flex; flex-direction: column; 
+                    justify-content: center; align-items: center;
+
+                    background: rgba(0, 30, 20, 0.45);
+                    border: 1px solid rgba(255, 215, 0, 0.15);
+                    border-radius: 25px;
+                    backdrop-filter: blur(4px);
+                    z-index: 5; 
+
+                    opacity: 0; transform: scale(0.95);
+                    transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+                }
+                .content-wrapper.active { opacity: 1; transform: scale(1); }
+
+                h1 { 
+                    font-size: 3.5em; margin: 0 0 10px 0; 
+                    color: #ffd700; 
+                    text-shadow: 0 4px 8px rgba(0,0,0,0.8);
+                    border-bottom: 2px solid rgba(184, 134, 11, 0.5);
+                    display: inline-block; padding-bottom: 10px;
+                    line-height: 1.1; width: 100%;
+                }
+
+                .sub-headers {
+                    display: flex; flex-direction: column; gap: 5px; width: 100%;
+                    margin-bottom: 15px;
+                }
+                .sub-h {
+                    font-size: 2em; color: #fff9c4; 
+                    margin: 0; padding: 0;
+                    text-shadow: 1px 1px 3px black;
+                }
+                
+                .content-body {
+                    font-size: 3em; color: #fff; 
+                    line-height: 1.4; font-weight: normal;
+                    text-shadow: 2px 2px 4px rgba(0,0,0,1);
+                    width: 100%; white-space: pre-wrap; word-wrap: break-word; 
+                }
+            </style>
+        </head>
+        <body ondblclick="document.body.requestFullscreen()">
+            
+            <div class="logo-container">
+                <img id="displayLogo" src="">
+            </div>
+
+            <div class="corner bottom-left">
+                <div class="line-outer"></div>
+                <div class="line-inner"></div>
+            </div>
+
+            <div id="wrapper" class="content-wrapper">
+                <h1 id="tvTitle"></h1>
+                
+                <div id="subContainer" class="sub-headers">
+                    <div id="tvSub1" class="sub-h"></div>
+                    <div id="tvSub2" class="sub-h"></div>
+                    <div id="tvSub3" class="sub-h"></div>
+                </div>
+
+                <div id="tvContent" class="content-body"></div>
+            </div>
+
+        </body>
+        </html>`;
+
+        tvWindow.document.write(designHTML);
+        tvWindow.document.close();
+        
+        updateTVFonts();
+        updateTVLogo();
+        updateTVBackground(); // Apply BG if selected
+
+        document.getElementById('connStatus').innerText = "✅ Connected";
+        document.getElementById('connStatus').style.color = "green";
+    }
+
+    // --- FONT HANDLING ---
+    function loadFont(file, key, statId) {
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = evt => {
+            fonts[key] = evt.target.result;
+            document.getElementById(statId).style.display = 'block';
+            if(key === 'f1') updateControlPanelFont(fonts.f1);
+            updateTVFonts();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function updateControlPanelFont(fontData) {
+        const styleBlock = document.getElementById('ctrl-font-style');
+        styleBlock.innerHTML = `
+            @font-face { font-family: 'UploadedMain'; src: url('${fontData}') format('truetype'); }
+            body, input, textarea, select, button { font-family: 'UploadedMain', 'Faruuma', sans-serif !important; }
+        `;
+    }
+
+    function updateTVFonts() {
+        if(!tvWindow || tvWindow.closed) return;
+        let fontFaces = "";
+        let fontFamilies = "'Faruuma'"; 
+        if(fonts.f1) { fontFaces += `@font-face { font-family: 'CF1'; src: url('${fonts.f1}') format('truetype'); } `; fontFamilies = "'CF1', " + fontFamilies; }
+        if(fonts.f2) { fontFaces += `@font-face { font-family: 'CF2'; src: url('${fonts.f2}') format('truetype'); } `; fontFamilies = "'CF2', " + fontFamilies; }
+        if(fonts.f3) { fontFaces += `@font-face { font-family: 'CF3'; src: url('${fonts.f3}') format('truetype'); } `; fontFamilies = "'CF3', " + fontFamilies; }
+        fontFamilies += ", 'Times New Roman', serif";
+
+        const finalCSS = `${fontFaces} body, h1, .sub-h, .content-body, input, textarea { font-family: ${fontFamilies} !important; }`;
+        let styleElem = tvWindow.document.getElementById('dynamic-font-styles');
+        if(styleElem) styleElem.innerHTML = finalCSS;
+    }
+
+    document.getElementById('font1').onchange = e => loadFont(e.target.files[0], 'f1', 'f1Stat');
+    document.getElementById('font2').onchange = e => loadFont(e.target.files[0], 'f2', 'f2Stat');
+    document.getElementById('font3').onchange = e => loadFont(e.target.files[0], 'f3', 'f3Stat');
+
+    // --- LOGO & BACKGROUND HANDLING ---
+    
+    // Logo
+    document.getElementById('logoInput').onchange = e => {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = evt => {
+            uploadedLogo = evt.target.result;
+            document.getElementById('logoPreview').src = uploadedLogo; 
+            document.getElementById('logoPreview').style.display = 'block';
+            updateTVLogo();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function updateTVLogo() {
+        if(!tvWindow || tvWindow.closed || !uploadedLogo) return;
+        const img = tvWindow.document.getElementById('displayLogo');
+        img.src = uploadedLogo; img.style.display = 'inline-block';
+    }
+
+    // Custom Background
+    document.getElementById('bgInput').onchange = e => {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = evt => {
+            uploadedBg = evt.target.result;
+            document.getElementById('bgStat').style.display = 'block';
+            updateTVBackground();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function updateTVBackground() {
+        if(!tvWindow || tvWindow.closed) return;
+        if(uploadedBg) {
+            tvWindow.document.body.style.backgroundImage = `url('${uploadedBg}')`;
+            tvWindow.document.body.style.backgroundSize = "cover";
+            tvWindow.document.body.style.backgroundPosition = "center";
+        }
+    }
+
+    // --- MAIN UPDATE FUNCTION ---
+    function updateTV() {
+        if(!tvWindow || tvWindow.closed) { alert("TV Closed! Re-open."); return; }
+        const doc = tvWindow.document;
+        try {
+            const titleTxt = document.getElementById('titleInput').value;
+            const sub1 = document.getElementById('sub1').value;
+            const sub2 = document.getElementById('sub2').value;
+            const sub3 = document.getElementById('sub3').value;
+            const bodyTxt = document.getElementById('mainContent').value;
+            
+            doc.getElementById('tvTitle').textContent = titleTxt;
+            doc.getElementById('tvContent').textContent = bodyTxt;
+
+            const s1 = doc.getElementById('tvSub1'); s1.textContent = sub1; s1.style.display = sub1 ? 'block' : 'none';
+            const s2 = doc.getElementById('tvSub2'); s2.textContent = sub2; s2.style.display = sub2 ? 'block' : 'none';
+            const s3 = doc.getElementById('tvSub3'); s3.textContent = sub3; s3.style.display = sub3 ? 'block' : 'none';
+
+            const tvWrapper = doc.getElementById('wrapper');
+            tvWrapper.classList.remove('active');
+            void tvWrapper.offsetWidth; 
+            tvWrapper.classList.add('active');
+
+            if(uploadedLogo) updateTVLogo();
+            if(uploadedBg) updateTVBackground();
+
+            document.getElementById('statusMsg').innerText = "On Air";
+            document.getElementById('statusMsg').style.color = "green";
+        } catch (err) { console.error(err); }
+    }
+
+    function clearTV() {
+        if(!tvWindow || tvWindow.closed) return;
+        tvWindow.document.getElementById('wrapper').classList.remove('active');
+        document.getElementById('statusMsg').innerText = "Cleared";
+        document.getElementById('statusMsg').style.color = "orange";
+    }
+
+    // --- CSV LOGIC ---
+    document.getElementById('csvFile').onchange = e => {
+        const r = new FileReader();
+        r.onload = ev => {
+            let txt = ev.target.result;
+            let lines = txt.split('\n');
+            contentList = [];
+            lines.forEach(l => {
+                let parts = l.split(',');
+                // Expecting 5 Columns: Title, Sub1, Sub2, Sub3, Body
+                if(parts.length >= 1 && parts[0].trim() !== "") {
+                    let t = parts[0] || "";
+                    let s1 = parts[1] || "";
+                    let s2 = parts[2] || "";
+                    let s3 = parts[3] || "";
+                    let b = parts.slice(4).join(',') || ""; 
+                    
+                    contentList.push({ title: t, sub1: s1, sub2: s2, sub3: s3, body: b });
+                }
+            });
+            filterList(); alert("Loaded " + contentList.length + " items.");
+        };
+        r.readAsText(e.target.files[0]);
+    };
+
+    function filterList() {
+        let t = document.getElementById('search').value.toLowerCase();
+        let l = document.getElementById('stuList'); l.innerHTML = '';
+        contentList.forEach((s,i) => {
+            let label = s.title ? s.title : s.body.substring(0, 30) + "...";
+            if(label.toLowerCase().includes(t)) {
+                let o = document.createElement('option'); o.value=i; o.text=(i+1)+". "+label; l.add(o);
+            }
+        });
+    }
+
+    function loadStudent() {
+        let idx = document.getElementById('stuList').value;
+        let s = contentList[idx];
+        document.getElementById('titleInput').value = s.title ? s.title.trim() : "";
+        document.getElementById('sub1').value = s.sub1 ? s.sub1.trim() : "";
+        document.getElementById('sub2').value = s.sub2 ? s.sub2.trim() : "";
+        document.getElementById('sub3').value = s.sub3 ? s.sub3.trim() : "";
+        document.getElementById('mainContent').value = s.body ? s.body.trim() : "";
+    }
+
+    function move(d) {
+        let l = document.getElementById('stuList');
+        if(l.options.length) {
+            l.selectedIndex = Math.min(Math.max(l.selectedIndex+d, 0), l.options.length-1);
+            loadStudent();
+        }
+    }
+</script>
+</body>
+</html>
