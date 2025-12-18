@@ -2,7 +2,7 @@
 <html lang="dv" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>Royal Event System (Custom BG)</title>
+    <title>Royal Event System (Video/GIF BG)</title>
     <style id="ctrl-font-style">
         @font-face { font-family: 'Faruuma'; src: local('Faruuma'), url('Fonts/faruuma.ttf') format('truetype'); }
         body, input, textarea, select, button { font-family: 'Faruuma', sans-serif; }
@@ -68,7 +68,10 @@
 
         #statusMsg { text-align: center; margin-top: 8px; font-weight: bold; color: green; font-size: 16px; }
         .font-indicator { font-size: 12px; color: green; text-align: right; margin-top:-5px; margin-bottom: 8px; display:none; font-weight:bold; }
-        #logoPreview, #bgPreview { max-height: 50px; display: block; margin: 5px auto; border: 1px solid #ccc; }
+        #logoPreview { max-height: 50px; display: block; margin: 5px auto; border: 1px solid #ccc; }
+        
+        /* New Video/BG Status Style */
+        #bgStatusText { font-size: 12px; color: #4a148c; font-weight: bold; margin-top: 5px; display: none; text-align:center; }
     </style>
 </head>
 <body>
@@ -91,7 +94,6 @@
 
         <div class="file-box" style="border: 1px solid #2196f3; background: #e3f2fd;">
             <label style="color:#0d47a1">3. ފޮންޓް ސެޓިންގްސް:</label>
-            
             <label style="font-size:11px">A. މައި ފޮންޓް (ދިވެހި/އަރަބި):</label>
             <input type="file" id="font1" accept=".ttf, .otf">
             <div id="f1Stat" class="font-indicator">✅ Loaded & Applied</div>
@@ -106,9 +108,9 @@
         </div>
 
         <div class="file-box" style="background:#f3e5f5; border-color:#8e24aa;">
-            <label style="color:#4a148c">4. ބެކްގްރައުންޑް ފޮޓޯ:</label>
-            <input type="file" id="bgInput" accept="image/*">
-            <div id="bgStat" class="font-indicator" style="color:#8e24aa;">✅ Set</div>
+            <label style="color:#4a148c">4. ބެކްގްރައުންޑް (ފޮޓޯ / ވީޑިއޯ):</label>
+            <input type="file" id="bgInput" accept="image/*, video/*">
+            <div id="bgStatusText"></div>
         </div>
 
         <label>ލިސްޓުން ހޯދާ:</label>
@@ -144,7 +146,10 @@
     let tvWindow = null;
     let contentList = [];
     let uploadedLogo = null;
-    let uploadedBg = null; // Store background image
+    
+    // Background Handling Variables
+    let bgType = 'none'; // 'image' or 'video'
+    let bgData = null; // Stores Base64 for images or Blob URL for videos
     let fonts = { f1: null, f2: null, f3: null };
 
     // --- TV SCREEN GENERATION ---
@@ -170,6 +175,16 @@
                     background-size: cover;
                     background-position: center;
                     display: flex; justify-content: center; align-items: center;
+                }
+
+                /* --- VIDEO BACKGROUND LAYER --- */
+                #bgVideo {
+                    position: fixed;
+                    top: 0; left: 0;
+                    width: 100vw; height: 100vh;
+                    object-fit: cover;
+                    z-index: -1; /* Behind everything */
+                    display: none;
                 }
 
                 /* LOGO AREA */
@@ -255,6 +270,8 @@
         </head>
         <body ondblclick="document.body.requestFullscreen()">
             
+            <video id="bgVideo" autoplay loop muted playsinline></video>
+
             <div class="logo-container">
                 <img id="displayLogo" src="">
             </div>
@@ -284,7 +301,7 @@
         
         updateTVFonts();
         updateTVLogo();
-        updateTVBackground(); // Apply BG if selected
+        updateTVBackground(); // Checks if BG is loaded
 
         document.getElementById('connStatus').innerText = "✅ Connected";
         document.getElementById('connStatus').style.color = "green";
@@ -329,9 +346,7 @@
     document.getElementById('font2').onchange = e => loadFont(e.target.files[0], 'f2', 'f2Stat');
     document.getElementById('font3').onchange = e => loadFont(e.target.files[0], 'f3', 'f3Stat');
 
-    // --- LOGO & BACKGROUND HANDLING ---
-    
-    // Logo
+    // --- LOGO HANDLING ---
     document.getElementById('logoInput').onchange = e => {
         const file = e.target.files[0];
         if(!file) return;
@@ -351,25 +366,59 @@
         img.src = uploadedLogo; img.style.display = 'inline-block';
     }
 
-    // Custom Background
+    // --- BACKGROUND HANDLING (IMAGE / VIDEO / GIF) ---
     document.getElementById('bgInput').onchange = e => {
         const file = e.target.files[0];
         if(!file) return;
-        const reader = new FileReader();
-        reader.onload = evt => {
-            uploadedBg = evt.target.result;
-            document.getElementById('bgStat').style.display = 'block';
+
+        const statText = document.getElementById('bgStatusText');
+        
+        // Detect File Type
+        if (file.type.startsWith('image/')) {
+            // It's an Image (JPG, PNG, GIF)
+            bgType = 'image';
+            const reader = new FileReader();
+            reader.onload = evt => {
+                bgData = evt.target.result;
+                statText.innerText = "✅ Image/GIF Set";
+                statText.style.display = "block";
+                updateTVBackground();
+            };
+            reader.readAsDataURL(file);
+
+        } else if (file.type.startsWith('video/')) {
+            // It's a Video (MP4, WebM)
+            bgType = 'video';
+            // Create a local URL for the video file (better performance than Base64)
+            bgData = URL.createObjectURL(file);
+            statText.innerText = "✅ Video Set";
+            statText.style.display = "block";
             updateTVBackground();
-        };
-        reader.readAsDataURL(file);
+        } else {
+            alert("⚠️ Please select an Image (JPG/PNG/GIF) or Video (MP4).");
+        }
     }
 
     function updateTVBackground() {
         if(!tvWindow || tvWindow.closed) return;
-        if(uploadedBg) {
-            tvWindow.document.body.style.backgroundImage = `url('${uploadedBg}')`;
-            tvWindow.document.body.style.backgroundSize = "cover";
-            tvWindow.document.body.style.backgroundPosition = "center";
+        
+        const body = tvWindow.document.body;
+        const vid = tvWindow.document.getElementById('bgVideo');
+
+        if(bgType === 'image') {
+            // HIDE Video, SHOW Image
+            vid.style.display = 'none';
+            vid.pause();
+            body.style.backgroundImage = `url('${bgData}')`;
+            body.style.backgroundSize = "cover";
+            body.style.backgroundPosition = "center";
+        } 
+        else if (bgType === 'video') {
+            // HIDE Image, SHOW Video
+            body.style.backgroundImage = 'none';
+            vid.src = bgData;
+            vid.style.display = 'block';
+            vid.play().catch(e => console.log("Autoplay blocked/waiting interaction"));
         }
     }
 
@@ -397,7 +446,7 @@
             tvWrapper.classList.add('active');
 
             if(uploadedLogo) updateTVLogo();
-            if(uploadedBg) updateTVBackground();
+            updateTVBackground(); // Ensure BG is applied
 
             document.getElementById('statusMsg').innerText = "On Air";
             document.getElementById('statusMsg').style.color = "green";
@@ -420,14 +469,12 @@
             contentList = [];
             lines.forEach(l => {
                 let parts = l.split(',');
-                // Expecting 5 Columns: Title, Sub1, Sub2, Sub3, Body
                 if(parts.length >= 1 && parts[0].trim() !== "") {
                     let t = parts[0] || "";
                     let s1 = parts[1] || "";
                     let s2 = parts[2] || "";
                     let s3 = parts[3] || "";
                     let b = parts.slice(4).join(',') || ""; 
-                    
                     contentList.push({ title: t, sub1: s1, sub2: s2, sub3: s3, body: b });
                 }
             });
