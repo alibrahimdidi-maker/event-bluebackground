@@ -2,7 +2,7 @@
 <html lang="dv" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>Royal Event System (Final Pro)</title>
+    <title>Royal Event System (Video Presenter)</title>
     <style id="ctrl-font-style">
         @font-face { font-family: 'Faruuma'; src: local('Faruuma'), url('Fonts/faruuma.ttf') format('truetype'); }
         body, input, textarea, select, button { font-family: 'Faruuma', sans-serif; }
@@ -19,7 +19,7 @@
         .main-layout { display: flex; gap: 15px; height: 96vh; max-width: 100%; margin: 0 auto; }
 
         .sidebar {
-            flex: 0 0 310px; background: white; padding: 15px; border-radius: 8px;
+            flex: 0 0 320px; background: white; padding: 15px; border-radius: 8px;
             display: flex; flex-direction: column;
             border-top: 5px solid #004d40; box-shadow: 2px 0 10px rgba(0,0,0,0.1);
             overflow-y: auto;
@@ -61,6 +61,11 @@
         .btn-live { background: #004d40; flex: 2; border: 2px solid #ffd700; color: #ffd700; font-size: 22px; }
         .btn-nav { background: #546e7a; }
         .btn-clear { background: #c62828; flex: 0.5; color: white; }
+
+        /* Video Presenter Buttons */
+        .vid-btn { background: #e65100; font-size: 13px; padding: 8px; border: none; border-radius: 4px; color: white; cursor: pointer; width: 100%; margin-bottom: 5px; font-weight: bold;}
+        .vid-btn:hover { background: #ef6c00; }
+        .vid-stop { background: #c62828; margin-top: 5px; }
 
         #statusMsg { text-align: center; margin-top: 8px; font-weight: bold; color: green; font-size: 16px; }
         .font-indicator { font-size: 12px; color: green; text-align: right; margin-top:-5px; margin-bottom: 8px; display:none; font-weight:bold; }
@@ -111,6 +116,20 @@
             <label style="color:#4a148c">4. ބެކްގްރައުންޑް (ފޮޓޯ / ވީޑިއޯ):</label>
             <input type="file" id="bgInput" accept="image/*, video/*">
             <div id="bgStatusText"></div>
+        </div>
+
+        <div class="file-box" style="background:#fff3e0; border-color:#e65100;">
+            <label style="color:#e65100">5. ވީޑިއޯ ޕްރެޒެންޓޭޝަން:</label>
+            
+            <label style="font-size:11px">A. ހާޑް ޑިސްކުން (MP4):</label>
+            <input type="file" id="presVideoInput" accept="video/mp4, video/webm">
+            <button class="vid-btn" onclick="playLocalVideo()">▶ Play Local File</button>
+
+            <label style="font-size:11px; margin-top:5px;">B. ޔޫޓިއުބް ލިންކް:</label>
+            <input type="text" id="ytLink" placeholder="Paste YouTube Link" style="font-size:12px; padding:5px; margin-bottom:5px;">
+            <button class="vid-btn" onclick="playYouTube()">▶ Play YouTube</button>
+
+            <button class="vid-btn vid-stop" onclick="stopVideo()">⏹ Stop Video / Return</button>
         </div>
 
         <label>ލިސްޓުން ހޯދާ:</label>
@@ -200,10 +219,18 @@
                 #fsBtn {
                     padding: 20px 40px; font-size: 25px; font-weight: bold;
                     background: #28a745; color: white; border: none; border-radius: 10px;
-                    cursor: pointer; box-shadow: 0 0 20px #28a745;
-                    font-family: sans-serif;
+                    cursor: pointer; box-shadow: 0 0 20px #28a745; font-family: sans-serif;
                 }
                 #fsBtn:hover { transform: scale(1.05); }
+
+                /* MEDIA PLAYER CONTAINER (High Z-Index) */
+                #mediaContainer {
+                    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                    background: black; z-index: 1000; display: none;
+                    justify-content: center; align-items: center;
+                }
+                #localVideoPlayer { width: 100%; height: 100%; object-fit: contain; }
+                #ytPlayer { width: 100%; height: 100%; border: none; }
 
                 .logo-container {
                     position: absolute; top: 20px; left: 0; right: 0;
@@ -271,7 +298,11 @@
             
             <div id="fsOverlay">
                 <button id="fsBtn" onclick="goFull()">CLICK TO START FULLSCREEN</button>
-                <div style="color:white; margin-top:10px; font-family:sans-serif;">(This removes the menu bar)</div>
+            </div>
+
+            <div id="mediaContainer">
+                <video id="localVideoPlayer" controls></video>
+                <iframe id="ytPlayer" allow="autoplay; encrypted-media" allowfullscreen></iframe>
             </div>
 
             <video id="bgVideo" autoplay loop muted playsinline></video>
@@ -312,7 +343,97 @@
         document.getElementById('connStatus').style.color = "green";
     }
 
-    // --- HELPER FUNCTIONS ---
+    // --- VIDEO PRESENTATION FUNCTIONS ---
+    
+    // 1. Play Local Video
+    function playLocalVideo() {
+        if(!tvWindow || tvWindow.closed) { alert("TV Not Open!"); return; }
+        const fileInput = document.getElementById('presVideoInput');
+        if(!fileInput.files[0]) { alert("Please select a video file first!"); return; }
+
+        const fileUrl = URL.createObjectURL(fileInput.files[0]);
+        const doc = tvWindow.document;
+
+        // Hide Text Wrapper
+        doc.getElementById('wrapper').style.opacity = '0';
+        
+        // Setup Media Container
+        const container = doc.getElementById('mediaContainer');
+        const localVid = doc.getElementById('localVideoPlayer');
+        const ytFrame = doc.getElementById('ytPlayer');
+
+        container.style.display = 'flex';
+        ytFrame.style.display = 'none';
+        localVid.style.display = 'block';
+
+        localVid.src = fileUrl;
+        localVid.play();
+
+        document.getElementById('statusMsg').innerText = "Playing Local Video...";
+        document.getElementById('statusMsg').style.color = "blue";
+    }
+
+    // 2. Play YouTube Video
+    function playYouTube() {
+        if(!tvWindow || tvWindow.closed) { alert("TV Not Open!"); return; }
+        let url = document.getElementById('ytLink').value;
+        if(!url) { alert("Please paste a YouTube link!"); return; }
+
+        // Extract Video ID
+        let vidId = "";
+        if(url.includes("v=")) {
+            vidId = url.split('v=')[1].split('&')[0];
+        } else if (url.includes("youtu.be/")) {
+            vidId = url.split('youtu.be/')[1].split('?')[0];
+        }
+
+        if(!vidId) { alert("Invalid YouTube Link!"); return; }
+
+        const embedUrl = `https://www.youtube.com/embed/${vidId}?autoplay=1&rel=0`;
+        const doc = tvWindow.document;
+
+        // Hide Text Wrapper
+        doc.getElementById('wrapper').style.opacity = '0';
+
+        // Setup Media Container
+        const container = doc.getElementById('mediaContainer');
+        const localVid = doc.getElementById('localVideoPlayer');
+        const ytFrame = doc.getElementById('ytPlayer');
+
+        container.style.display = 'flex';
+        localVid.style.display = 'none';
+        localVid.pause(); // Stop local if playing
+        ytFrame.style.display = 'block';
+        
+        ytFrame.src = embedUrl;
+
+        document.getElementById('statusMsg').innerText = "Playing YouTube...";
+        document.getElementById('statusMsg').style.color = "red";
+    }
+
+    // 3. Stop Video & Return
+    function stopVideo() {
+        if(!tvWindow || tvWindow.closed) return;
+        const doc = tvWindow.document;
+
+        // Reset Media Container
+        const container = doc.getElementById('mediaContainer');
+        const localVid = doc.getElementById('localVideoPlayer');
+        const ytFrame = doc.getElementById('ytPlayer');
+
+        localVid.pause();
+        localVid.src = "";
+        ytFrame.src = "";
+        container.style.display = 'none';
+
+        // Show Text Wrapper again
+        doc.getElementById('wrapper').style.opacity = '1';
+
+        document.getElementById('statusMsg').innerText = "Video Stopped. On Air.";
+        document.getElementById('statusMsg').style.color = "green";
+    }
+
+    // --- HELPER FUNCTIONS (Same as before) ---
     function loadFont(file, key, statId) {
         if(!file) return;
         const reader = new FileReader();
@@ -374,6 +495,9 @@
         if(!tvWindow || tvWindow.closed) { alert("TV Closed! Re-open."); return; }
         const doc = tvWindow.document;
         try {
+            // Force text back on if video was playing
+            stopVideo(); 
+
             doc.getElementById('tvTitle').textContent = document.getElementById('titleInput').value;
             doc.getElementById('tvContent').textContent = document.getElementById('mainContent').value;
             const s1=doc.getElementById('tvSub1'), v1=document.getElementById('sub1').value; s1.textContent=v1; s1.style.display=v1?'block':'none';
