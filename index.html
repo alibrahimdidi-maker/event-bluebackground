@@ -2,22 +2,16 @@
 <html lang="dv" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>Royal Event System (Secured)</title>
+    <title>Royal Event System (Final Pro)</title>
     <style id="ctrl-font-style">
         @font-face { font-family: 'Faruuma'; src: local('Faruuma'), url('Fonts/faruuma.ttf') format('truetype'); }
         body, input, textarea, select, button { font-family: 'Faruuma', sans-serif; }
     </style>
     
     <style>
-        /* --- DISABLE SELECTION (SECURITY) --- */
+        /* --- SECURITY & UI --- */
         body { 
-            -webkit-user-select: none; /* Safari */
-            -ms-user-select: none; /* IE 10 and IE 11 */
-            user-select: none; /* Standard syntax */
-        }
-        
-        /* --- CONTROL PANEL STYLES --- */
-        body { 
+            -webkit-user-select: none; user-select: none;
             background: #eceff1; padding: 10px; margin: 0; 
             height: 100vh; box-sizing: border-box; overflow: hidden; 
         }
@@ -29,7 +23,6 @@
             display: flex; flex-direction: column;
             border-top: 5px solid #004d40; box-shadow: 2px 0 10px rgba(0,0,0,0.1);
             overflow-y: auto;
-            position: relative;
         }
 
         .editor {
@@ -52,20 +45,14 @@
         label { display: block; font-weight: bold; font-size: 13px; margin-bottom: 3px; color: #333; }
         input[type="file"] { width: 100%; font-size: 11px; margin-bottom: 5px; cursor: pointer; }
 
-        /* INPUTS - Allow typing but keep selection disabled elsewhere */
         input[type="text"], textarea { 
             width: 98%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; 
             font-size: 20px; margin-bottom: 10px;
-            text-align: center; background: #fafafa; direction: rtl;
-            user-select: text; /* Allow text selection inside inputs */
+            text-align: center; background: #fafafa; direction: rtl; user-select: text;
         }
         input[type="text"]:focus, textarea:focus { border-color: #b8860b; outline: none; background: #fff; }
         
-        .sub-input {
-            font-size: 16px !important; padding: 8px !important;
-            margin-bottom: 5px !important; border-color: #eee !important;
-        }
-        
+        .sub-input { font-size: 16px !important; padding: 8px !important; margin-bottom: 5px !important; border-color: #eee !important; }
         textarea { resize: vertical; min-height: 120px; line-height: 1.6; font-size: 24px !important; }
         select { width: 100%; font-size: 14px; outline: none; border-color: #004d40; margin-bottom: 10px; }
 
@@ -80,25 +67,16 @@
         #logoPreview { max-height: 50px; display: block; margin: 5px auto; border: 1px solid #ccc; }
         #bgStatusText { font-size: 12px; color: #4a148c; font-weight: bold; margin-top: 5px; display: none; text-align:center; }
 
-        /* COPYRIGHT FOOTER STYLE */
         .copyright-footer {
-            margin-top: auto;
-            padding-top: 15px;
-            border-top: 1px solid #ddd;
-            text-align: center;
-            font-size: 11px;
-            color: #555;
-            font-family: 'Arial', sans-serif;
-            line-height: 1.4;
+            margin-top: auto; padding-top: 15px; border-top: 1px solid #ddd;
+            text-align: center; font-size: 11px; color: #555; font-family: 'Arial', sans-serif;
         }
-        .copyright-name {
-            font-weight: bold;
-            color: #004d40;
-            font-size: 12px;
-        }
+        .copyright-name { font-weight: bold; color: #004d40; font-size: 12px; }
     </style>
 </head>
-<body oncontextmenu="return false;"> <div class="main-layout">
+<body oncontextmenu="return false;">
+
+<div class="main-layout">
     <div class="sidebar">
         <button class="launch-btn" onclick="openTV()">🖥️ 1. ޓީވީ ސްކްރީން ހުޅުވާ</button>
         <div id="connStatus" style="margin-top:0px; font-size:12px; color:red; font-weight:bold; text-align:center; margin-bottom:10px;">Not Connected</div>
@@ -147,7 +125,6 @@
 
     <div class="editor">
         <h2>🎓 ކޮންޓްރޯލް ޕެނަލް</h2>
-        
         <label style="text-align:center">މައި ސުރުޚީ / Main Heading:</label>
         <input id="titleInput" class="dhi" placeholder="މައި ސުރުޚީ ލިޔުއްވާ...">
 
@@ -170,34 +147,18 @@
 </div>
 
 <script>
-    // --- SECURITY SCRIPT: DISABLE SHORTCUTS & INSPECT ---
+    // --- SECURITY SCRIPT ---
     document.onkeydown = function(e) {
-        if(event.keyCode == 123) { // F12
-            return false;
-        }
-        if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) { // Ctrl+Shift+I
-            return false;
-        }
-        if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) { // Ctrl+Shift+C
-            return false;
-        }
-        if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) { // Ctrl+Shift+J
-            return false;
-        }
-        if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) { // Ctrl+U
-            return false;
-        }
-        if(e.ctrlKey && e.keyCode == 'S'.charCodeAt(0)) { // Ctrl+S (Prevent Save)
-            return false;
-        }
+        if(event.keyCode == 123) return false;
+        if(e.ctrlKey && e.shiftKey && (e.keyCode == 'I'.charCodeAt(0) || e.keyCode == 'C'.charCodeAt(0) || e.keyCode == 'J'.charCodeAt(0))) return false;
+        if(e.ctrlKey && (e.keyCode == 'U'.charCodeAt(0) || e.keyCode == 'S'.charCodeAt(0))) return false;
     }
 
-    // --- MAIN APPLICATION LOGIC ---
+    // --- MAIN VARS ---
     let tvWindow = null;
     let contentList = [];
     let uploadedLogo = null;
-    let bgType = 'none'; 
-    let bgData = null; 
+    let bgType = 'none'; let bgData = null; 
     let fonts = { f1: null, f2: null, f3: null };
 
     // --- TV SCREEN GENERATION ---
@@ -221,7 +182,6 @@
                     background-image: radial-gradient(circle at center, #003d2e 0%, #001812 100%);
                     background-size: cover; background-position: center;
                     display: flex; justify-content: center; align-items: center;
-                    /* Disable selection on TV screen too */
                     user-select: none;
                 }
 
@@ -229,6 +189,21 @@
                     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
                     object-fit: cover; z-index: -1; display: none;
                 }
+
+                /* FULLSCREEN BUTTON */
+                #fsOverlay {
+                    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                    background: rgba(0,0,0,0.8); z-index: 9999;
+                    display: flex; justify-content: center; align-items: center;
+                    flex-direction: column;
+                }
+                #fsBtn {
+                    padding: 20px 40px; font-size: 25px; font-weight: bold;
+                    background: #28a745; color: white; border: none; border-radius: 10px;
+                    cursor: pointer; box-shadow: 0 0 20px #28a745;
+                    font-family: sans-serif;
+                }
+                #fsBtn:hover { transform: scale(1.05); }
 
                 .logo-container {
                     position: absolute; top: 20px; left: 0; right: 0;
@@ -293,6 +268,12 @@
             </style>
         </head>
         <body oncontextmenu="return false;">
+            
+            <div id="fsOverlay">
+                <button id="fsBtn" onclick="goFull()">CLICK TO START FULLSCREEN</button>
+                <div style="color:white; margin-top:10px; font-family:sans-serif;">(This removes the menu bar)</div>
+            </div>
+
             <video id="bgVideo" autoplay loop muted playsinline></video>
 
             <div class="logo-container"><img id="displayLogo" src=""></div>
@@ -307,6 +288,16 @@
                 </div>
                 <div id="tvContent" class="content-body"></div>
             </div>
+
+            <script>
+                function goFull() {
+                    document.documentElement.requestFullscreen().catch(e => console.log(e));
+                    document.getElementById('fsOverlay').style.display = 'none';
+                }
+                document.ondblclick = function() {
+                    document.documentElement.requestFullscreen().catch(e => console.log(e));
+                }
+            <\/script>
         </body>
         </html>`;
 
@@ -321,7 +312,7 @@
         document.getElementById('connStatus').style.color = "green";
     }
 
-    // --- FONT HANDLING ---
+    // --- HELPER FUNCTIONS ---
     function loadFont(file, key, statId) {
         if(!file) return;
         const reader = new FileReader();
@@ -333,182 +324,98 @@
         };
         reader.readAsDataURL(file);
     }
-
     function updateControlPanelFont(fontData) {
-        const styleBlock = document.getElementById('ctrl-font-style');
-        styleBlock.innerHTML = `
+        document.getElementById('ctrl-font-style').innerHTML = `
             @font-face { font-family: 'UploadedMain'; src: url('${fontData}') format('truetype'); }
             body, input, textarea, select, button { font-family: 'UploadedMain', 'Faruuma', sans-serif !important; }
         `;
     }
-
     function updateTVFonts() {
         if(!tvWindow || tvWindow.closed) return;
-        let fontFaces = "";
-        let fontFamilies = "'Faruuma'"; 
+        let fontFaces = "", fontFamilies = "'Faruuma'"; 
         if(fonts.f1) { fontFaces += `@font-face { font-family: 'CF1'; src: url('${fonts.f1}') format('truetype'); } `; fontFamilies = "'CF1', " + fontFamilies; }
         if(fonts.f2) { fontFaces += `@font-face { font-family: 'CF2'; src: url('${fonts.f2}') format('truetype'); } `; fontFamilies = "'CF2', " + fontFamilies; }
         if(fonts.f3) { fontFaces += `@font-face { font-family: 'CF3'; src: url('${fonts.f3}') format('truetype'); } `; fontFamilies = "'CF3', " + fontFamilies; }
         fontFamilies += ", 'Times New Roman', serif";
-
-        const finalCSS = `${fontFaces} body, h1, .sub-h, .content-body, input, textarea { font-family: ${fontFamilies} !important; }`;
-        let styleElem = tvWindow.document.getElementById('dynamic-font-styles');
-        if(styleElem) styleElem.innerHTML = finalCSS;
+        if(tvWindow.document.getElementById('dynamic-font-styles'))
+            tvWindow.document.getElementById('dynamic-font-styles').innerHTML = `${fontFaces} body, h1, .sub-h, .content-body, input, textarea { font-family: ${fontFamilies} !important; }`;
     }
-
     document.getElementById('font1').onchange = e => loadFont(e.target.files[0], 'f1', 'f1Stat');
     document.getElementById('font2').onchange = e => loadFont(e.target.files[0], 'f2', 'f2Stat');
     document.getElementById('font3').onchange = e => loadFont(e.target.files[0], 'f3', 'f3Stat');
 
-    // --- LOGO & BACKGROUND HANDLING ---
     document.getElementById('logoInput').onchange = e => {
-        const file = e.target.files[0];
-        if(!file) return;
+        const file = e.target.files[0]; if(!file) return;
         const reader = new FileReader();
-        reader.onload = evt => {
-            uploadedLogo = evt.target.result;
-            document.getElementById('logoPreview').src = uploadedLogo; 
-            document.getElementById('logoPreview').style.display = 'block';
-            updateTVLogo();
-        };
+        reader.onload = evt => { uploadedLogo = evt.target.result; document.getElementById('logoPreview').src = uploadedLogo; document.getElementById('logoPreview').style.display = 'block'; updateTVLogo(); };
         reader.readAsDataURL(file);
     }
-
-    function updateTVLogo() {
-        if(!tvWindow || tvWindow.closed || !uploadedLogo) return;
-        const img = tvWindow.document.getElementById('displayLogo');
-        img.src = uploadedLogo; img.style.display = 'inline-block';
-    }
+    function updateTVLogo() { if(tvWindow && !tvWindow.closed && uploadedLogo) { const img = tvWindow.document.getElementById('displayLogo'); img.src = uploadedLogo; img.style.display = 'inline-block'; }}
 
     document.getElementById('bgInput').onchange = e => {
-        const file = e.target.files[0];
-        if(!file) return;
+        const file = e.target.files[0]; if(!file) return;
         const statText = document.getElementById('bgStatusText');
-        
         if (file.type.startsWith('image/')) {
-            bgType = 'image';
-            const reader = new FileReader();
-            reader.onload = evt => {
-                bgData = evt.target.result;
-                statText.innerText = "✅ Image/GIF Set";
-                statText.style.display = "block";
-                updateTVBackground();
-            };
+            bgType = 'image'; const reader = new FileReader();
+            reader.onload = evt => { bgData = evt.target.result; statText.innerText = "✅ Image/GIF Set"; statText.style.display = "block"; updateTVBackground(); };
             reader.readAsDataURL(file);
-
         } else if (file.type.startsWith('video/')) {
-            bgType = 'video';
-            bgData = URL.createObjectURL(file);
-            statText.innerText = "✅ Video Set";
-            statText.style.display = "block";
-            updateTVBackground();
+            bgType = 'video'; bgData = URL.createObjectURL(file); statText.innerText = "✅ Video Set"; statText.style.display = "block"; updateTVBackground();
         }
     }
-
     function updateTVBackground() {
         if(!tvWindow || tvWindow.closed) return;
-        const body = tvWindow.document.body;
-        const vid = tvWindow.document.getElementById('bgVideo');
-
-        if(bgType === 'image') {
-            vid.style.display = 'none'; vid.pause();
-            body.style.backgroundImage = `url('${bgData}')`;
-            body.style.backgroundSize = "cover"; body.style.backgroundPosition = "center";
-        } else if (bgType === 'video') {
-            body.style.backgroundImage = 'none';
-            vid.src = bgData; vid.style.display = 'block';
-            vid.play().catch(e => console.log("Autoplay blocked"));
-        }
+        const body = tvWindow.document.body; const vid = tvWindow.document.getElementById('bgVideo');
+        if(bgType === 'image') { vid.style.display = 'none'; vid.pause(); body.style.backgroundImage = `url('${bgData}')`; body.style.backgroundSize = "cover"; body.style.backgroundPosition = "center"; } 
+        else if (bgType === 'video') { body.style.backgroundImage = 'none'; vid.src = bgData; vid.style.display = 'block'; vid.play().catch(e => console.log("Autoplay waiting")); }
     }
 
-    // --- UPDATE TV ---
     function updateTV() {
         if(!tvWindow || tvWindow.closed) { alert("TV Closed! Re-open."); return; }
         const doc = tvWindow.document;
         try {
-            const titleTxt = document.getElementById('titleInput').value;
-            const sub1 = document.getElementById('sub1').value;
-            const sub2 = document.getElementById('sub2').value;
-            const sub3 = document.getElementById('sub3').value;
-            const bodyTxt = document.getElementById('mainContent').value;
-            
-            doc.getElementById('tvTitle').textContent = titleTxt;
-            doc.getElementById('tvContent').textContent = bodyTxt;
-
-            const s1 = doc.getElementById('tvSub1'); s1.textContent = sub1; s1.style.display = sub1 ? 'block' : 'none';
-            const s2 = doc.getElementById('tvSub2'); s2.textContent = sub2; s2.style.display = sub2 ? 'block' : 'none';
-            const s3 = doc.getElementById('tvSub3'); s3.textContent = sub3; s3.style.display = sub3 ? 'block' : 'none';
-
-            const tvWrapper = doc.getElementById('wrapper');
-            tvWrapper.classList.remove('active');
-            void tvWrapper.offsetWidth; 
-            tvWrapper.classList.add('active');
-
-            if(uploadedLogo) updateTVLogo();
-            updateTVBackground();
-
-            document.getElementById('statusMsg').innerText = "On Air";
-            document.getElementById('statusMsg').style.color = "green";
+            doc.getElementById('tvTitle').textContent = document.getElementById('titleInput').value;
+            doc.getElementById('tvContent').textContent = document.getElementById('mainContent').value;
+            const s1=doc.getElementById('tvSub1'), v1=document.getElementById('sub1').value; s1.textContent=v1; s1.style.display=v1?'block':'none';
+            const s2=doc.getElementById('tvSub2'), v2=document.getElementById('sub2').value; s2.textContent=v2; s2.style.display=v2?'block':'none';
+            const s3=doc.getElementById('tvSub3'), v3=document.getElementById('sub3').value; s3.textContent=v3; s3.style.display=v3?'block':'none';
+            const w = doc.getElementById('wrapper'); w.classList.remove('active'); void w.offsetWidth; w.classList.add('active');
+            if(uploadedLogo) updateTVLogo(); updateTVBackground();
+            document.getElementById('statusMsg').innerText = "On Air"; document.getElementById('statusMsg').style.color = "green";
         } catch (err) { console.error(err); }
     }
 
-    function clearTV() {
-        if(!tvWindow || tvWindow.closed) return;
-        tvWindow.document.getElementById('wrapper').classList.remove('active');
-        document.getElementById('statusMsg').innerText = "Cleared";
-        document.getElementById('statusMsg').style.color = "orange";
-    }
+    function clearTV() { if(tvWindow && !tvWindow.closed) { tvWindow.document.getElementById('wrapper').classList.remove('active'); document.getElementById('statusMsg').innerText = "Cleared"; document.getElementById('statusMsg').style.color = "orange"; } }
 
-    // --- CSV LOGIC ---
     document.getElementById('csvFile').onchange = e => {
         const r = new FileReader();
         r.onload = ev => {
-            let txt = ev.target.result;
-            let lines = txt.split('\n');
-            contentList = [];
+            let txt = ev.target.result; let lines = txt.split('\n'); contentList = [];
             lines.forEach(l => {
                 let parts = l.split(',');
                 if(parts.length >= 1 && parts[0].trim() !== "") {
-                    let t = parts[0] || "";
-                    let s1 = parts[1] || "";
-                    let s2 = parts[2] || "";
-                    let s3 = parts[3] || "";
-                    let b = parts.slice(4).join(',') || ""; 
-                    contentList.push({ title: t, sub1: s1, sub2: s2, sub3: s3, body: b });
+                    contentList.push({ title: parts[0]||"", sub1: parts[1]||"", sub2: parts[2]||"", sub3: parts[3]||"", body: parts.slice(4).join(',')||"" });
                 }
             });
             filterList(); alert("Loaded " + contentList.length + " items.");
-        };
-        r.readAsText(e.target.files[0]);
+        }; r.readAsText(e.target.files[0]);
     };
-
     function filterList() {
-        let t = document.getElementById('search').value.toLowerCase();
-        let l = document.getElementById('stuList'); l.innerHTML = '';
+        let t = document.getElementById('search').value.toLowerCase(); let l = document.getElementById('stuList'); l.innerHTML = '';
         contentList.forEach((s,i) => {
             let label = s.title ? s.title : s.body.substring(0, 30) + "...";
-            if(label.toLowerCase().includes(t)) {
-                let o = document.createElement('option'); o.value=i; o.text=(i+1)+". "+label; l.add(o);
-            }
+            if(label.toLowerCase().includes(t)) { let o = document.createElement('option'); o.value=i; o.text=(i+1)+". "+label; l.add(o); }
         });
     }
-
     function loadStudent() {
-        let idx = document.getElementById('stuList').value;
-        let s = contentList[idx];
-        document.getElementById('titleInput').value = s.title ? s.title.trim() : "";
-        document.getElementById('sub1').value = s.sub1 ? s.sub1.trim() : "";
-        document.getElementById('sub2').value = s.sub2 ? s.sub2.trim() : "";
-        document.getElementById('sub3').value = s.sub3 ? s.sub3.trim() : "";
-        document.getElementById('mainContent').value = s.body ? s.body.trim() : "";
+        let s = contentList[document.getElementById('stuList').value];
+        document.getElementById('titleInput').value = s.title; document.getElementById('sub1').value = s.sub1;
+        document.getElementById('sub2').value = s.sub2; document.getElementById('sub3').value = s.sub3;
+        document.getElementById('mainContent').value = s.body;
     }
-
     function move(d) {
         let l = document.getElementById('stuList');
-        if(l.options.length) {
-            l.selectedIndex = Math.min(Math.max(l.selectedIndex+d, 0), l.options.length-1);
-            loadStudent();
-        }
+        if(l.options.length) { l.selectedIndex = Math.min(Math.max(l.selectedIndex+d, 0), l.options.length-1); loadStudent(); }
     }
 </script>
 </body>
