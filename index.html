@@ -2,7 +2,7 @@
 <html lang="dv" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>Royal Event System (Video Presenter)</title>
+    <title>Royal Event System (Protected)</title>
     <style id="ctrl-font-style">
         @font-face { font-family: 'Faruuma'; src: local('Faruuma'), url('Fonts/faruuma.ttf') format('truetype'); }
         body, input, textarea, select, button { font-family: 'Faruuma', sans-serif; }
@@ -14,6 +14,27 @@
             -webkit-user-select: none; user-select: none;
             background: #eceff1; padding: 10px; margin: 0; 
             height: 100vh; box-sizing: border-box; overflow: hidden; 
+        }
+
+        /* LOGIN OVERLAY */
+        #loginOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #004d40; z-index: 10000;
+            display: flex; justify-content: center; align-items: center;
+            flex-direction: column;
+        }
+        .login-box {
+            background: white; padding: 30px; border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5); text-align: center;
+            border: 2px solid #d4af37;
+        }
+        #passInput {
+            padding: 10px; font-size: 18px; text-align: center;
+            border: 1px solid #ccc; border-radius: 5px; width: 200px; margin-bottom: 10px;
+        }
+        #loginBtn {
+            padding: 10px 20px; background: #b8860b; color: white;
+            border: none; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%;
         }
         
         .main-layout { display: flex; gap: 15px; height: 96vh; max-width: 100%; margin: 0 auto; }
@@ -61,8 +82,8 @@
         .btn-live { background: #004d40; flex: 2; border: 2px solid #ffd700; color: #ffd700; font-size: 22px; }
         .btn-nav { background: #546e7a; }
         .btn-clear { background: #c62828; flex: 0.5; color: white; }
+        .btn-clear:active { background: #b71c1c; transform: translateY(2px); }
 
-        /* Video Presenter Buttons */
         .vid-btn { background: #e65100; font-size: 13px; padding: 8px; border: none; border-radius: 4px; color: white; cursor: pointer; width: 100%; margin-bottom: 5px; font-weight: bold;}
         .vid-btn:hover { background: #ef6c00; }
         .vid-stop { background: #c62828; margin-top: 5px; }
@@ -80,6 +101,15 @@
     </style>
 </head>
 <body oncontextmenu="return false;">
+
+<div id="loginOverlay">
+    <div class="login-box">
+        <h3 style="margin-top:0; color:#004d40;">System Login</h3>
+        <input type="password" id="passInput" placeholder="Password" onkeydown="if(event.key === 'Enter') checkPassword()">
+        <button id="loginBtn" onclick="checkPassword()">LOGIN</button>
+        <div id="loginMsg" style="color:red; font-size:12px; margin-top:5px;"></div>
+    </div>
+</div>
 
 <div class="main-layout">
     <div class="sidebar">
@@ -120,7 +150,6 @@
 
         <div class="file-box" style="background:#fff3e0; border-color:#e65100;">
             <label style="color:#e65100">5. ވީޑިއޯ ޕްރެޒެންޓޭޝަން:</label>
-            
             <label style="font-size:11px">A. ހާޑް ޑިސްކުން (MP4):</label>
             <input type="file" id="presVideoInput" accept="video/mp4, video/webm">
             <button class="vid-btn" onclick="playLocalVideo()">▶ Play Local File</button>
@@ -159,18 +188,29 @@
             <button class="action btn-nav" onclick="move(-1)">◀ Prev</button>
             <button class="action btn-live" onclick="updateTV()">📺 ޓީވީއަށް އަރުވާ</button>
             <button class="action btn-nav" onclick="move(1)">Next ▶</button>
-            <button class="action btn-clear" onclick="clearTV()" title="Clear Text">X</button>
+            <button class="action btn-clear" onclick="clearTV()" title="Hide Content">X</button>
         </div>
         <div id="statusMsg">Ready</div>
     </div>
 </div>
 
 <script>
-    // --- SECURITY SCRIPT ---
+    // --- SECURITY: SHORTCUTS ---
     document.onkeydown = function(e) {
         if(event.keyCode == 123) return false;
         if(e.ctrlKey && e.shiftKey && (e.keyCode == 'I'.charCodeAt(0) || e.keyCode == 'C'.charCodeAt(0) || e.keyCode == 'J'.charCodeAt(0))) return false;
         if(e.ctrlKey && (e.keyCode == 'U'.charCodeAt(0) || e.keyCode == 'S'.charCodeAt(0))) return false;
+    }
+
+    // --- PASSWORD SYSTEM ---
+    function checkPassword() {
+        var p = document.getElementById('passInput').value;
+        // CHANGE PASSWORD HERE
+        if (p === "1234") {
+            document.getElementById('loginOverlay').style.display = "none";
+        } else {
+            document.getElementById('loginMsg').innerText = "Incorrect Password!";
+        }
     }
 
     // --- MAIN VARS ---
@@ -180,7 +220,7 @@
     let bgType = 'none'; let bgData = null; 
     let fonts = { f1: null, f2: null, f3: null };
 
-    // --- TV SCREEN GENERATION ---
+    // --- TV GENERATION ---
     function openTV() {
         tvWindow = window.open('', 'RoyalLogoTV', 'width=1280,height=720,menubar=no,toolbar=no');
         if(!tvWindow) { alert("⚠️ Please Allow Popups!"); return; }
@@ -204,26 +244,21 @@
                     user-select: none;
                 }
 
-                #bgVideo {
-                    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-                    object-fit: cover; z-index: -1; display: none;
-                }
+                #bgVideo { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: -1; display: none; }
 
-                /* FULLSCREEN BUTTON */
+                /* FULLSCREEN BTN */
                 #fsOverlay {
                     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
                     background: rgba(0,0,0,0.8); z-index: 9999;
-                    display: flex; justify-content: center; align-items: center;
-                    flex-direction: column;
+                    display: flex; justify-content: center; align-items: center; flex-direction: column;
                 }
                 #fsBtn {
                     padding: 20px 40px; font-size: 25px; font-weight: bold;
                     background: #28a745; color: white; border: none; border-radius: 10px;
                     cursor: pointer; box-shadow: 0 0 20px #28a745; font-family: sans-serif;
                 }
-                #fsBtn:hover { transform: scale(1.05); }
 
-                /* MEDIA PLAYER CONTAINER (High Z-Index) */
+                /* MEDIA PLAYER */
                 #mediaContainer {
                     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
                     background: black; z-index: 1000; display: none;
@@ -232,102 +267,50 @@
                 #localVideoPlayer { width: 100%; height: 100%; object-fit: contain; }
                 #ytPlayer { width: 100%; height: 100%; border: none; }
 
-                .logo-container {
-                    position: absolute; top: 20px; left: 0; right: 0;
-                    text-align: center; z-index: 10; padding: 0 20px;
-                }
-                #displayLogo {
-                    max-height: 80px; max-width: 40%; object-fit: contain;
-                    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); display: none; 
-                }
+                .logo-container { position: absolute; top: 20px; left: 0; right: 0; text-align: center; z-index: 10; padding: 0 20px; }
+                #displayLogo { max-height: 80px; max-width: 40%; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); display: none; }
 
                 .corner { position: absolute; width: 250px; height: 250px; pointer-events: none; z-index: 20; }
                 .bottom-left { bottom: 30px; left: 30px; transform: rotate(180deg); }
 
-                .line-outer {
-                    position: absolute; top: 0; right: 0; width: 60px; height: 60px; 
-                    border-top: 10px solid #b8860b; border-right: 10px solid #b8860b;
-                    box-shadow: 2px -2px 5px rgba(0,0,0,0.5);
-                }
-                .line-inner {
-                    position: absolute; top: 20px; right: 20px; width: 140px; height: 140px; 
-                    border-top: 3px solid #ffd700; border-right: 3px solid #ffd700;
-                    box-shadow: 1px -1px 3px rgba(0,0,0,0.5);
-                }
+                .line-outer { position: absolute; top: 0; right: 0; width: 60px; height: 60px; border-top: 10px solid #b8860b; border-right: 10px solid #b8860b; box-shadow: 2px -2px 5px rgba(0,0,0,0.5); }
+                .line-inner { position: absolute; top: 20px; right: 20px; width: 140px; height: 140px; border-top: 3px solid #ffd700; border-right: 3px solid #ffd700; box-shadow: 1px -1px 3px rgba(0,0,0,0.5); }
 
                 .content-wrapper {
                     width: 75%; max-width: 1300px; max-height: 65vh; 
                     margin-top: 40px; margin-bottom: 50px; 
                     padding: 40px; text-align: center;
-                    display: flex; flex-direction: column; 
-                    justify-content: center; align-items: center;
-
+                    display: flex; flex-direction: column; justify-content: center; align-items: center;
                     background: rgba(0, 30, 20, 0.45);
                     border: 1px solid rgba(255, 215, 0, 0.15);
                     border-radius: 25px; backdrop-filter: blur(4px); z-index: 5; 
-                    opacity: 0; transform: scale(0.95);
-                    transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+                    opacity: 0; transform: scale(0.95); transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
                 }
                 .content-wrapper.active { opacity: 1; transform: scale(1); }
 
-                h1 { 
-                    font-size: 3.5em; margin: 0 0 10px 0; color: #ffd700; 
-                    text-shadow: 0 4px 8px rgba(0,0,0,0.8);
-                    border-bottom: 2px solid rgba(184, 134, 11, 0.5);
-                    display: inline-block; padding-bottom: 10px;
-                    line-height: 1.1; width: 100%;
-                }
-
-                .sub-headers {
-                    display: flex; flex-direction: column; gap: 5px; width: 100%;
-                    margin-bottom: 15px;
-                }
-                .sub-h {
-                    font-size: 2em; color: #fff9c4; margin: 0; padding: 0;
-                    text-shadow: 1px 1px 3px black;
-                }
-                
-                .content-body {
-                    font-size: 3em; color: #fff; line-height: 1.4; font-weight: normal;
-                    text-shadow: 2px 2px 4px rgba(0,0,0,1);
-                    width: 100%; white-space: pre-wrap; word-wrap: break-word; 
-                }
+                h1 { font-size: 3.5em; margin: 0 0 10px 0; color: #ffd700; text-shadow: 0 4px 8px rgba(0,0,0,0.8); border-bottom: 2px solid rgba(184, 134, 11, 0.5); display: inline-block; padding-bottom: 10px; line-height: 1.1; width: 100%; }
+                .sub-headers { display: flex; flex-direction: column; gap: 5px; width: 100%; margin-bottom: 15px; }
+                .sub-h { font-size: 2em; color: #fff9c4; margin: 0; padding: 0; text-shadow: 1px 1px 3px black; }
+                .content-body { font-size: 3em; color: #fff; line-height: 1.4; font-weight: normal; text-shadow: 2px 2px 4px rgba(0,0,0,1); width: 100%; white-space: pre-wrap; word-wrap: break-word; }
             </style>
         </head>
         <body oncontextmenu="return false;">
-            
-            <div id="fsOverlay">
-                <button id="fsBtn" onclick="goFull()">CLICK TO START FULLSCREEN</button>
-            </div>
-
+            <div id="fsOverlay"><button id="fsBtn" onclick="goFull()">CLICK TO START FULLSCREEN</button></div>
             <div id="mediaContainer">
                 <video id="localVideoPlayer" controls></video>
                 <iframe id="ytPlayer" allow="autoplay; encrypted-media" allowfullscreen></iframe>
             </div>
-
             <video id="bgVideo" autoplay loop muted playsinline></video>
-
             <div class="logo-container"><img id="displayLogo" src=""></div>
             <div class="corner bottom-left"><div class="line-outer"></div><div class="line-inner"></div></div>
-
             <div id="wrapper" class="content-wrapper">
                 <h1 id="tvTitle"></h1>
-                <div id="subContainer" class="sub-headers">
-                    <div id="tvSub1" class="sub-h"></div>
-                    <div id="tvSub2" class="sub-h"></div>
-                    <div id="tvSub3" class="sub-h"></div>
-                </div>
+                <div id="subContainer" class="sub-headers"><div id="tvSub1" class="sub-h"></div><div id="tvSub2" class="sub-h"></div><div id="tvSub3" class="sub-h"></div></div>
                 <div id="tvContent" class="content-body"></div>
             </div>
-
             <script>
-                function goFull() {
-                    document.documentElement.requestFullscreen().catch(e => console.log(e));
-                    document.getElementById('fsOverlay').style.display = 'none';
-                }
-                document.ondblclick = function() {
-                    document.documentElement.requestFullscreen().catch(e => console.log(e));
-                }
+                function goFull() { document.documentElement.requestFullscreen().catch(e => console.log(e)); document.getElementById('fsOverlay').style.display = 'none'; }
+                document.ondblclick = function() { document.documentElement.requestFullscreen().catch(e => console.log(e)); }
             <\/script>
         </body>
         </html>`;
@@ -338,118 +321,67 @@
         updateTVFonts();
         updateTVLogo();
         updateTVBackground();
-
         document.getElementById('connStatus').innerText = "✅ Connected";
         document.getElementById('connStatus').style.color = "green";
     }
 
-    // --- VIDEO PRESENTATION FUNCTIONS ---
-    
-    // 1. Play Local Video
+    // --- VIDEO LOGIC ---
     function playLocalVideo() {
         if(!tvWindow || tvWindow.closed) { alert("TV Not Open!"); return; }
         const fileInput = document.getElementById('presVideoInput');
-        if(!fileInput.files[0]) { alert("Please select a video file first!"); return; }
-
+        if(!fileInput.files[0]) { alert("Select video file first!"); return; }
         const fileUrl = URL.createObjectURL(fileInput.files[0]);
         const doc = tvWindow.document;
-
-        // Hide Text Wrapper
         doc.getElementById('wrapper').style.opacity = '0';
-        
-        // Setup Media Container
         const container = doc.getElementById('mediaContainer');
         const localVid = doc.getElementById('localVideoPlayer');
-        const ytFrame = doc.getElementById('ytPlayer');
-
         container.style.display = 'flex';
-        ytFrame.style.display = 'none';
+        doc.getElementById('ytPlayer').style.display = 'none';
         localVid.style.display = 'block';
-
         localVid.src = fileUrl;
         localVid.play();
-
-        document.getElementById('statusMsg').innerText = "Playing Local Video...";
-        document.getElementById('statusMsg').style.color = "blue";
+        document.getElementById('statusMsg').innerText = "Playing Video...";
     }
 
-    // 2. Play YouTube Video
     function playYouTube() {
         if(!tvWindow || tvWindow.closed) { alert("TV Not Open!"); return; }
         let url = document.getElementById('ytLink').value;
-        if(!url) { alert("Please paste a YouTube link!"); return; }
-
-        // Extract Video ID
         let vidId = "";
-        if(url.includes("v=")) {
-            vidId = url.split('v=')[1].split('&')[0];
-        } else if (url.includes("youtu.be/")) {
-            vidId = url.split('youtu.be/')[1].split('?')[0];
-        }
-
+        if(url.includes("v=")) vidId = url.split('v=')[1].split('&')[0];
+        else if (url.includes("youtu.be/")) vidId = url.split('youtu.be/')[1].split('?')[0];
         if(!vidId) { alert("Invalid YouTube Link!"); return; }
-
-        const embedUrl = `https://www.youtube.com/embed/${vidId}?autoplay=1&rel=0`;
         const doc = tvWindow.document;
-
-        // Hide Text Wrapper
         doc.getElementById('wrapper').style.opacity = '0';
-
-        // Setup Media Container
         const container = doc.getElementById('mediaContainer');
-        const localVid = doc.getElementById('localVideoPlayer');
         const ytFrame = doc.getElementById('ytPlayer');
-
         container.style.display = 'flex';
-        localVid.style.display = 'none';
-        localVid.pause(); // Stop local if playing
+        doc.getElementById('localVideoPlayer').style.display = 'none';
+        doc.getElementById('localVideoPlayer').pause();
         ytFrame.style.display = 'block';
-        
-        ytFrame.src = embedUrl;
-
+        ytFrame.src = `https://www.youtube.com/embed/${vidId}?autoplay=1&rel=0`;
         document.getElementById('statusMsg').innerText = "Playing YouTube...";
-        document.getElementById('statusMsg').style.color = "red";
     }
 
-    // 3. Stop Video & Return
     function stopVideo() {
         if(!tvWindow || tvWindow.closed) return;
         const doc = tvWindow.document;
-
-        // Reset Media Container
         const container = doc.getElementById('mediaContainer');
-        const localVid = doc.getElementById('localVideoPlayer');
-        const ytFrame = doc.getElementById('ytPlayer');
-
-        localVid.pause();
-        localVid.src = "";
-        ytFrame.src = "";
+        doc.getElementById('localVideoPlayer').pause();
+        doc.getElementById('localVideoPlayer').src = "";
+        doc.getElementById('ytPlayer').src = "";
         container.style.display = 'none';
-
-        // Show Text Wrapper again
         doc.getElementById('wrapper').style.opacity = '1';
-
-        document.getElementById('statusMsg').innerText = "Video Stopped. On Air.";
-        document.getElementById('statusMsg').style.color = "green";
+        document.getElementById('statusMsg').innerText = "Video Stopped";
     }
 
-    // --- HELPER FUNCTIONS (Same as before) ---
+    // --- HELPER FUNCTIONS ---
     function loadFont(file, key, statId) {
-        if(!file) return;
-        const reader = new FileReader();
+        if(!file) return; const reader = new FileReader();
         reader.onload = evt => {
-            fonts[key] = evt.target.result;
-            document.getElementById(statId).style.display = 'block';
-            if(key === 'f1') updateControlPanelFont(fonts.f1);
+            fonts[key] = evt.target.result; document.getElementById(statId).style.display = 'block';
+            if(key === 'f1') document.getElementById('ctrl-font-style').innerHTML = `@font-face { font-family: 'UploadedMain'; src: url('${fonts.f1}') format('truetype'); } body, input, textarea, select, button { font-family: 'UploadedMain', 'Faruuma', sans-serif !important; }`;
             updateTVFonts();
-        };
-        reader.readAsDataURL(file);
-    }
-    function updateControlPanelFont(fontData) {
-        document.getElementById('ctrl-font-style').innerHTML = `
-            @font-face { font-family: 'UploadedMain'; src: url('${fontData}') format('truetype'); }
-            body, input, textarea, select, button { font-family: 'UploadedMain', 'Faruuma', sans-serif !important; }
-        `;
+        }; reader.readAsDataURL(file);
     }
     function updateTVFonts() {
         if(!tvWindow || tvWindow.closed) return;
@@ -465,24 +397,13 @@
     document.getElementById('font2').onchange = e => loadFont(e.target.files[0], 'f2', 'f2Stat');
     document.getElementById('font3').onchange = e => loadFont(e.target.files[0], 'f3', 'f3Stat');
 
-    document.getElementById('logoInput').onchange = e => {
-        const file = e.target.files[0]; if(!file) return;
-        const reader = new FileReader();
-        reader.onload = evt => { uploadedLogo = evt.target.result; document.getElementById('logoPreview').src = uploadedLogo; document.getElementById('logoPreview').style.display = 'block'; updateTVLogo(); };
-        reader.readAsDataURL(file);
-    }
+    document.getElementById('logoInput').onchange = e => { const file = e.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = evt => { uploadedLogo = evt.target.result; document.getElementById('logoPreview').src = uploadedLogo; document.getElementById('logoPreview').style.display = 'block'; updateTVLogo(); }; reader.readAsDataURL(file); }
     function updateTVLogo() { if(tvWindow && !tvWindow.closed && uploadedLogo) { const img = tvWindow.document.getElementById('displayLogo'); img.src = uploadedLogo; img.style.display = 'inline-block'; }}
 
     document.getElementById('bgInput').onchange = e => {
-        const file = e.target.files[0]; if(!file) return;
-        const statText = document.getElementById('bgStatusText');
-        if (file.type.startsWith('image/')) {
-            bgType = 'image'; const reader = new FileReader();
-            reader.onload = evt => { bgData = evt.target.result; statText.innerText = "✅ Image/GIF Set"; statText.style.display = "block"; updateTVBackground(); };
-            reader.readAsDataURL(file);
-        } else if (file.type.startsWith('video/')) {
-            bgType = 'video'; bgData = URL.createObjectURL(file); statText.innerText = "✅ Video Set"; statText.style.display = "block"; updateTVBackground();
-        }
+        const file = e.target.files[0]; if(!file) return; const statText = document.getElementById('bgStatusText');
+        if (file.type.startsWith('image/')) { bgType = 'image'; const reader = new FileReader(); reader.onload = evt => { bgData = evt.target.result; statText.innerText = "✅ Image/GIF Set"; statText.style.display = "block"; updateTVBackground(); }; reader.readAsDataURL(file); } 
+        else if (file.type.startsWith('video/')) { bgType = 'video'; bgData = URL.createObjectURL(file); statText.innerText = "✅ Video Set"; statText.style.display = "block"; updateTVBackground(); }
     }
     function updateTVBackground() {
         if(!tvWindow || tvWindow.closed) return;
@@ -495,9 +416,7 @@
         if(!tvWindow || tvWindow.closed) { alert("TV Closed! Re-open."); return; }
         const doc = tvWindow.document;
         try {
-            // Force text back on if video was playing
-            stopVideo(); 
-
+            stopVideo(); // Ensure video player is hidden
             doc.getElementById('tvTitle').textContent = document.getElementById('titleInput').value;
             doc.getElementById('tvContent').textContent = document.getElementById('mainContent').value;
             const s1=doc.getElementById('tvSub1'), v1=document.getElementById('sub1').value; s1.textContent=v1; s1.style.display=v1?'block':'none';
@@ -509,27 +428,27 @@
         } catch (err) { console.error(err); }
     }
 
-    function clearTV() { if(tvWindow && !tvWindow.closed) { tvWindow.document.getElementById('wrapper').classList.remove('active'); document.getElementById('statusMsg').innerText = "Cleared"; document.getElementById('statusMsg').style.color = "orange"; } }
+    // --- CLEAR TV (FIXED) ---
+    function clearTV() {
+        if(!tvWindow || tvWindow.closed) return;
+        // 1. Hide Text Wrapper
+        tvWindow.document.getElementById('wrapper').classList.remove('active');
+        // 2. Stop Any Running Presentation Video
+        stopVideo();
+        document.getElementById('statusMsg').innerText = "Screen Cleared";
+        document.getElementById('statusMsg').style.color = "orange";
+    }
 
     document.getElementById('csvFile').onchange = e => {
-        const r = new FileReader();
-        r.onload = ev => {
+        const r = new FileReader(); r.onload = ev => {
             let txt = ev.target.result; let lines = txt.split('\n'); contentList = [];
-            lines.forEach(l => {
-                let parts = l.split(',');
-                if(parts.length >= 1 && parts[0].trim() !== "") {
-                    contentList.push({ title: parts[0]||"", sub1: parts[1]||"", sub2: parts[2]||"", sub3: parts[3]||"", body: parts.slice(4).join(',')||"" });
-                }
-            });
+            lines.forEach(l => { let parts = l.split(','); if(parts.length >= 1 && parts[0].trim() !== "") contentList.push({ title: parts[0]||"", sub1: parts[1]||"", sub2: parts[2]||"", sub3: parts[3]||"", body: parts.slice(4).join(',')||"" }); });
             filterList(); alert("Loaded " + contentList.length + " items.");
         }; r.readAsText(e.target.files[0]);
     };
     function filterList() {
         let t = document.getElementById('search').value.toLowerCase(); let l = document.getElementById('stuList'); l.innerHTML = '';
-        contentList.forEach((s,i) => {
-            let label = s.title ? s.title : s.body.substring(0, 30) + "...";
-            if(label.toLowerCase().includes(t)) { let o = document.createElement('option'); o.value=i; o.text=(i+1)+". "+label; l.add(o); }
-        });
+        contentList.forEach((s,i) => { let label = s.title ? s.title : s.body.substring(0, 30) + "..."; if(label.toLowerCase().includes(t)) { let o = document.createElement('option'); o.value=i; o.text=(i+1)+". "+label; l.add(o); } });
     }
     function loadStudent() {
         let s = contentList[document.getElementById('stuList').value];
