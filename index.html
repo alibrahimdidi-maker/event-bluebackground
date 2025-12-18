@@ -2,13 +2,20 @@
 <html lang="dv" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>Royal Event System (Video/GIF BG)</title>
+    <title>Royal Event System (Secured)</title>
     <style id="ctrl-font-style">
         @font-face { font-family: 'Faruuma'; src: local('Faruuma'), url('Fonts/faruuma.ttf') format('truetype'); }
         body, input, textarea, select, button { font-family: 'Faruuma', sans-serif; }
     </style>
     
     <style>
+        /* --- DISABLE SELECTION (SECURITY) --- */
+        body { 
+            -webkit-user-select: none; /* Safari */
+            -ms-user-select: none; /* IE 10 and IE 11 */
+            user-select: none; /* Standard syntax */
+        }
+        
         /* --- CONTROL PANEL STYLES --- */
         body { 
             background: #eceff1; padding: 10px; margin: 0; 
@@ -22,6 +29,7 @@
             display: flex; flex-direction: column;
             border-top: 5px solid #004d40; box-shadow: 2px 0 10px rgba(0,0,0,0.1);
             overflow-y: auto;
+            position: relative;
         }
 
         .editor {
@@ -42,13 +50,14 @@
 
         .file-box { background: #fdfbe6; padding: 10px; border-radius: 5px; border: 1px solid #f0e68c; margin-bottom: 8px; }
         label { display: block; font-weight: bold; font-size: 13px; margin-bottom: 3px; color: #333; }
-        input[type="file"] { width: 100%; font-size: 11px; margin-bottom: 5px; }
+        input[type="file"] { width: 100%; font-size: 11px; margin-bottom: 5px; cursor: pointer; }
 
-        /* INPUTS */
+        /* INPUTS - Allow typing but keep selection disabled elsewhere */
         input[type="text"], textarea { 
             width: 98%; padding: 10px; border: 2px solid #ddd; border-radius: 6px; 
             font-size: 20px; margin-bottom: 10px;
             text-align: center; background: #fafafa; direction: rtl;
+            user-select: text; /* Allow text selection inside inputs */
         }
         input[type="text"]:focus, textarea:focus { border-color: #b8860b; outline: none; background: #fff; }
         
@@ -69,14 +78,27 @@
         #statusMsg { text-align: center; margin-top: 8px; font-weight: bold; color: green; font-size: 16px; }
         .font-indicator { font-size: 12px; color: green; text-align: right; margin-top:-5px; margin-bottom: 8px; display:none; font-weight:bold; }
         #logoPreview { max-height: 50px; display: block; margin: 5px auto; border: 1px solid #ccc; }
-        
-        /* New Video/BG Status Style */
         #bgStatusText { font-size: 12px; color: #4a148c; font-weight: bold; margin-top: 5px; display: none; text-align:center; }
+
+        /* COPYRIGHT FOOTER STYLE */
+        .copyright-footer {
+            margin-top: auto;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 11px;
+            color: #555;
+            font-family: 'Arial', sans-serif;
+            line-height: 1.4;
+        }
+        .copyright-name {
+            font-weight: bold;
+            color: #004d40;
+            font-size: 12px;
+        }
     </style>
 </head>
-<body>
-
-<div class="main-layout">
+<body oncontextmenu="return false;"> <div class="main-layout">
     <div class="sidebar">
         <button class="launch-btn" onclick="openTV()">🖥️ 1. ޓީވީ ސްކްރީން ހުޅުވާ</button>
         <div id="connStatus" style="margin-top:0px; font-size:12px; color:red; font-weight:bold; text-align:center; margin-bottom:10px;">Not Connected</div>
@@ -115,7 +137,12 @@
 
         <label>ލިސްޓުން ހޯދާ:</label>
         <input type="text" id="search" placeholder="Search..." onkeyup="filterList()" style="font-size:14px; padding:5px; margin-bottom:5px;">
-        <select id="stuList" size="8" onchange="loadStudent()"></select>
+        <select id="stuList" size="5" onchange="loadStudent()"></select>
+
+        <div class="copyright-footer">
+            &copy; Copyright Reserved<br>
+            <span class="copyright-name">Ali Ibrahim Didi (7791550)</span>
+        </div>
     </div>
 
     <div class="editor">
@@ -143,13 +170,34 @@
 </div>
 
 <script>
+    // --- SECURITY SCRIPT: DISABLE SHORTCUTS & INSPECT ---
+    document.onkeydown = function(e) {
+        if(event.keyCode == 123) { // F12
+            return false;
+        }
+        if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) { // Ctrl+Shift+I
+            return false;
+        }
+        if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) { // Ctrl+Shift+C
+            return false;
+        }
+        if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) { // Ctrl+Shift+J
+            return false;
+        }
+        if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) { // Ctrl+U
+            return false;
+        }
+        if(e.ctrlKey && e.keyCode == 'S'.charCodeAt(0)) { // Ctrl+S (Prevent Save)
+            return false;
+        }
+    }
+
+    // --- MAIN APPLICATION LOGIC ---
     let tvWindow = null;
     let contentList = [];
     let uploadedLogo = null;
-    
-    // Background Handling Variables
-    let bgType = 'none'; // 'image' or 'video'
-    let bgData = null; // Stores Base64 for images or Blob URL for videos
+    let bgType = 'none'; 
+    let bgData = null; 
     let fonts = { f1: null, f2: null, f3: null };
 
     // --- TV SCREEN GENERATION ---
@@ -170,80 +218,58 @@
                 body { 
                     margin: 0; padding: 0; overflow: hidden; height: 100vh; width: 100vw;
                     background-color: #002a20; 
-                    /* Default Gradient */
                     background-image: radial-gradient(circle at center, #003d2e 0%, #001812 100%);
-                    background-size: cover;
-                    background-position: center;
+                    background-size: cover; background-position: center;
                     display: flex; justify-content: center; align-items: center;
+                    /* Disable selection on TV screen too */
+                    user-select: none;
                 }
 
-                /* --- VIDEO BACKGROUND LAYER --- */
                 #bgVideo {
-                    position: fixed;
-                    top: 0; left: 0;
-                    width: 100vw; height: 100vh;
-                    object-fit: cover;
-                    z-index: -1; /* Behind everything */
-                    display: none;
+                    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+                    object-fit: cover; z-index: -1; display: none;
                 }
 
-                /* LOGO AREA */
                 .logo-container {
                     position: absolute; top: 20px; left: 0; right: 0;
                     text-align: center; z-index: 10; padding: 0 20px;
                 }
                 #displayLogo {
-                    max-height: 80px; max-width: 40%;
-                    object-fit: contain;
-                    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
-                    display: none; 
+                    max-height: 80px; max-width: 40%; object-fit: contain;
+                    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); display: none; 
                 }
 
-                /* --- BOTTOM CORNER DESIGN --- */
                 .corner { position: absolute; width: 250px; height: 250px; pointer-events: none; z-index: 20; }
                 .bottom-left { bottom: 30px; left: 30px; transform: rotate(180deg); }
 
                 .line-outer {
-                    position: absolute; top: 0; right: 0;
-                    width: 60px; height: 60px; 
-                    border-top: 10px solid #b8860b; 
-                    border-right: 10px solid #b8860b;
+                    position: absolute; top: 0; right: 0; width: 60px; height: 60px; 
+                    border-top: 10px solid #b8860b; border-right: 10px solid #b8860b;
                     box-shadow: 2px -2px 5px rgba(0,0,0,0.5);
                 }
                 .line-inner {
-                    position: absolute; top: 20px; right: 20px;
-                    width: 140px; height: 140px; 
-                    border-top: 3px solid #ffd700; 
-                    border-right: 3px solid #ffd700;
+                    position: absolute; top: 20px; right: 20px; width: 140px; height: 140px; 
+                    border-top: 3px solid #ffd700; border-right: 3px solid #ffd700;
                     box-shadow: 1px -1px 3px rgba(0,0,0,0.5);
                 }
 
-                /* --- CONTENT BOX --- */
                 .content-wrapper {
-                    width: 75%; 
-                    max-width: 1300px;
-                    max-height: 65vh; 
-                    margin-top: 40px; 
-                    margin-bottom: 50px; 
-                    
+                    width: 75%; max-width: 1300px; max-height: 65vh; 
+                    margin-top: 40px; margin-bottom: 50px; 
                     padding: 40px; text-align: center;
                     display: flex; flex-direction: column; 
                     justify-content: center; align-items: center;
 
                     background: rgba(0, 30, 20, 0.45);
                     border: 1px solid rgba(255, 215, 0, 0.15);
-                    border-radius: 25px;
-                    backdrop-filter: blur(4px);
-                    z-index: 5; 
-
+                    border-radius: 25px; backdrop-filter: blur(4px); z-index: 5; 
                     opacity: 0; transform: scale(0.95);
                     transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
                 }
                 .content-wrapper.active { opacity: 1; transform: scale(1); }
 
                 h1 { 
-                    font-size: 3.5em; margin: 0 0 10px 0; 
-                    color: #ffd700; 
+                    font-size: 3.5em; margin: 0 0 10px 0; color: #ffd700; 
                     text-shadow: 0 4px 8px rgba(0,0,0,0.8);
                     border-bottom: 2px solid rgba(184, 134, 11, 0.5);
                     display: inline-block; padding-bottom: 10px;
@@ -255,44 +281,32 @@
                     margin-bottom: 15px;
                 }
                 .sub-h {
-                    font-size: 2em; color: #fff9c4; 
-                    margin: 0; padding: 0;
+                    font-size: 2em; color: #fff9c4; margin: 0; padding: 0;
                     text-shadow: 1px 1px 3px black;
                 }
                 
                 .content-body {
-                    font-size: 3em; color: #fff; 
-                    line-height: 1.4; font-weight: normal;
+                    font-size: 3em; color: #fff; line-height: 1.4; font-weight: normal;
                     text-shadow: 2px 2px 4px rgba(0,0,0,1);
                     width: 100%; white-space: pre-wrap; word-wrap: break-word; 
                 }
             </style>
         </head>
-        <body ondblclick="document.body.requestFullscreen()">
-            
+        <body oncontextmenu="return false;">
             <video id="bgVideo" autoplay loop muted playsinline></video>
 
-            <div class="logo-container">
-                <img id="displayLogo" src="">
-            </div>
-
-            <div class="corner bottom-left">
-                <div class="line-outer"></div>
-                <div class="line-inner"></div>
-            </div>
+            <div class="logo-container"><img id="displayLogo" src=""></div>
+            <div class="corner bottom-left"><div class="line-outer"></div><div class="line-inner"></div></div>
 
             <div id="wrapper" class="content-wrapper">
                 <h1 id="tvTitle"></h1>
-                
                 <div id="subContainer" class="sub-headers">
                     <div id="tvSub1" class="sub-h"></div>
                     <div id="tvSub2" class="sub-h"></div>
                     <div id="tvSub3" class="sub-h"></div>
                 </div>
-
                 <div id="tvContent" class="content-body"></div>
             </div>
-
         </body>
         </html>`;
 
@@ -301,7 +315,7 @@
         
         updateTVFonts();
         updateTVLogo();
-        updateTVBackground(); // Checks if BG is loaded
+        updateTVBackground();
 
         document.getElementById('connStatus').innerText = "✅ Connected";
         document.getElementById('connStatus').style.color = "green";
@@ -346,7 +360,7 @@
     document.getElementById('font2').onchange = e => loadFont(e.target.files[0], 'f2', 'f2Stat');
     document.getElementById('font3').onchange = e => loadFont(e.target.files[0], 'f3', 'f3Stat');
 
-    // --- LOGO HANDLING ---
+    // --- LOGO & BACKGROUND HANDLING ---
     document.getElementById('logoInput').onchange = e => {
         const file = e.target.files[0];
         if(!file) return;
@@ -366,16 +380,12 @@
         img.src = uploadedLogo; img.style.display = 'inline-block';
     }
 
-    // --- BACKGROUND HANDLING (IMAGE / VIDEO / GIF) ---
     document.getElementById('bgInput').onchange = e => {
         const file = e.target.files[0];
         if(!file) return;
-
         const statText = document.getElementById('bgStatusText');
         
-        // Detect File Type
         if (file.type.startsWith('image/')) {
-            // It's an Image (JPG, PNG, GIF)
             bgType = 'image';
             const reader = new FileReader();
             reader.onload = evt => {
@@ -387,42 +397,31 @@
             reader.readAsDataURL(file);
 
         } else if (file.type.startsWith('video/')) {
-            // It's a Video (MP4, WebM)
             bgType = 'video';
-            // Create a local URL for the video file (better performance than Base64)
             bgData = URL.createObjectURL(file);
             statText.innerText = "✅ Video Set";
             statText.style.display = "block";
             updateTVBackground();
-        } else {
-            alert("⚠️ Please select an Image (JPG/PNG/GIF) or Video (MP4).");
         }
     }
 
     function updateTVBackground() {
         if(!tvWindow || tvWindow.closed) return;
-        
         const body = tvWindow.document.body;
         const vid = tvWindow.document.getElementById('bgVideo');
 
         if(bgType === 'image') {
-            // HIDE Video, SHOW Image
-            vid.style.display = 'none';
-            vid.pause();
+            vid.style.display = 'none'; vid.pause();
             body.style.backgroundImage = `url('${bgData}')`;
-            body.style.backgroundSize = "cover";
-            body.style.backgroundPosition = "center";
-        } 
-        else if (bgType === 'video') {
-            // HIDE Image, SHOW Video
+            body.style.backgroundSize = "cover"; body.style.backgroundPosition = "center";
+        } else if (bgType === 'video') {
             body.style.backgroundImage = 'none';
-            vid.src = bgData;
-            vid.style.display = 'block';
-            vid.play().catch(e => console.log("Autoplay blocked/waiting interaction"));
+            vid.src = bgData; vid.style.display = 'block';
+            vid.play().catch(e => console.log("Autoplay blocked"));
         }
     }
 
-    // --- MAIN UPDATE FUNCTION ---
+    // --- UPDATE TV ---
     function updateTV() {
         if(!tvWindow || tvWindow.closed) { alert("TV Closed! Re-open."); return; }
         const doc = tvWindow.document;
@@ -446,7 +445,7 @@
             tvWrapper.classList.add('active');
 
             if(uploadedLogo) updateTVLogo();
-            updateTVBackground(); // Ensure BG is applied
+            updateTVBackground();
 
             document.getElementById('statusMsg').innerText = "On Air";
             document.getElementById('statusMsg').style.color = "green";
